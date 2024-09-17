@@ -297,6 +297,17 @@ public class ImageNode : MarkdownNode
     }
 }
 
+public class StrikethroughNode : MarkdownNode
+{
+    public string Content { get; }
+    public StrikethroughNode(string content) => Content = content;
+
+    public override string ToHtml()
+    {
+        return $"<del>{Regex.Replace(Content, @"~~(.+?)~~", "$1")}</del>";
+    }
+}
+
 public class MarkdownParser
 {
     public List<MarkdownNode> Parse(List<MarkdownToken> tokens)
@@ -339,7 +350,14 @@ public class MarkdownParser
                     nodes.Add(new ImageNode(token.Content));
                     break;
                 case MarkdownTokenType.Text:
-                    nodes.Add(new TextNode(token.Content));
+                    if (Regex.IsMatch(token.Content, Patterns.StrikethroughPattern))
+                    {
+                        nodes.Add(new StrikethroughNode(token.Content));
+                    }
+                    else
+                    {
+                        nodes.Add(new TextNode(token.Content));
+                    }
                     break;
             }
         }
