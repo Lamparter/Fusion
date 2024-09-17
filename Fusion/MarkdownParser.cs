@@ -250,12 +250,12 @@ public class TaskListNode : MarkdownNode
 
     public override string ToHtml()
     {
-        var match = Regex.Match(Content, @"^- \[([ x])\] (.+)$");
+        var match = Regex.Match(Content, Patterns.TaskListPattern);
         if (match.Success)
         {
             var isChecked = match.Groups[1].Value == "x" ? "checked" : "";
             var text = match.Groups[2].Value;
-            return $"<li><input type='checkbox' {isChecked} disabled> {text}</li>";
+            return $"<li><input type='checkbox'{(isChecked == "checked" ? " checked" : "")}> {text}</li>"; // TODO: Add the ability to pass an argument to see if the consumer wants the checkbox to be disabled or not
         }
         return "";
     }
