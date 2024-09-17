@@ -1,6 +1,15 @@
 ﻿using System.Text.RegularExpressions;
 using System.Text;
 
+public enum MarkdownStandard
+{
+    GitHub,
+    Discord,
+    Slack,
+    WhatsApp,
+    CommonMark
+}
+
 public class Patterns
 {
     // I *may* have used AI to generate these regex patterns...
@@ -149,14 +158,15 @@ public class MarkdownLexer // I wanted to call this "MarkdownTokeniser" but a ce
 
 public abstract class MarkdownNode
 {
-    public abstract string ToHtml();
+    public abstract string ToHtml(MarkdownStandard standard);
 }
+
 public class TextNode : MarkdownNode
 {
     public string Content { get; }
     public TextNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
         return Content;
     }
@@ -167,7 +177,7 @@ public class HeadingNode : MarkdownNode
     public string Content { get; }
     public HeadingNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
         var level = Content.TakeWhile(c => c == '#').Count();
         var text = Content.TrimStart('#').Trim();
@@ -180,9 +190,9 @@ public class BoldNode : MarkdownNode
     public string Content { get; }
     public BoldNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
-        return $"<strong>{Regex.Replace(Content, @"\*\*(.+?)\*\*", "$1")}</strong>";
+        return $"<strong>{Regex.Replace(Content, Patterns.BoldPattern, "$1")}</strong>";
     }
 }
 
@@ -191,9 +201,9 @@ public class ItalicNode : MarkdownNode
     public string Content { get; }
     public ItalicNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
-        return $"<em>{Regex.Replace(Content, @"_(.+?)_", "$1")}</em>";
+        return $"<em>{Regex.Replace(Content, Patterns.ItalicPattern, "$1")}</em>";
     }
 }
 
@@ -202,9 +212,9 @@ public class ListItemNode : MarkdownNode
     public string Content { get; }
     public ListItemNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
-        return $"<li>{Regex.Replace(Content, @"^(\*|-) ", "")}</li>";
+        return $"<li>{Regex.Replace(Content, Patterns.ListItemPattern, "$2")}</li>";
     }
 }
 
@@ -213,9 +223,9 @@ public class CodeBlockNode : MarkdownNode
     public string Content { get; }
     public CodeBlockNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
-        return $"<pre><code>{Regex.Replace(Content, @"```([^`]*)```", "$1")}</code></pre>";
+        return $"<pre><code>{Regex.Replace(Content, Patterns.CodeBlockPattern, "$1")}</code></pre>";
     }
 }
 
@@ -224,7 +234,7 @@ public class TableNode : MarkdownNode
     public string Content { get; }
     public TableNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
         var htmlBuilder = new StringBuilder("<table><tbody>");
         var rows = Content.Split('\n').Where(line => line.StartsWith("|"));
@@ -248,14 +258,15 @@ public class TaskListNode : MarkdownNode
     public string Content { get; }
     public TaskListNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
         var match = Regex.Match(Content, Patterns.TaskListPattern);
         if (match.Success)
         {
             var isChecked = match.Groups[1].Value == "x" ? "checked" : "";
             var text = match.Groups[2].Value;
-            return $"<li><input type='checkbox'{(isChecked == "checked" ? " checked" : "")}> {text}</li>"; // TODO: Add the ability to pass an argument to see if the consumer wants the checkbox to be disabled or not
+            var disabled = standard == MarkdownStandard.CommonMark ? " disabled" : "";
+            return $"<li><input type='checkbox'{(isChecked == "checked" ? " checked" : "")}{disabled}> {text}</li>";
         }
         return "";
     }
@@ -266,7 +277,7 @@ public class LinkNode : MarkdownNode
     public string Content { get; }
     public LinkNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
         var match = Regex.Match(Content, Patterns.LinkPattern);
         if (match.Success)
@@ -284,7 +295,7 @@ public class ImageNode : MarkdownNode
     public string Content { get; }
     public ImageNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
         var match = Regex.Match(Content, Patterns.ImagePattern);
         if (match.Success)
@@ -302,9 +313,9 @@ public class StrikethroughNode : MarkdownNode
     public string Content { get; }
     public StrikethroughNode(string content) => Content = content;
 
-    public override string ToHtml()
+    public override string ToHtml(MarkdownStandard standard)
     {
-        return $"<del>{Regex.Replace(Content, @"~~(.+?)~~", "$1")}</del>";
+        return $"<del>{Regex.Replace(Content, Patterns.StrikethroughPattern, "$1")}</del>";
     }
 }
 
@@ -368,12 +379,12 @@ public class MarkdownParser
 
 public class HtmlRenderer
 {
-    public string Render(IEnumerable<MarkdownNode> nodes)
+    public string Render(IEnumerable<MarkdownNode> nodes, MarkdownStandard standard)
     {
         var sb = new StringBuilder();
         foreach (var node in nodes)
         {
-            sb.AppendLine(node.ToHtml());
+            sb.AppendLine(node.ToHtml(standard));
         }
         return sb.ToString();
     }
@@ -381,14 +392,20 @@ public class HtmlRenderer
 
 public class MarkdownProcessor
 {
-    private MarkdownLexer _lexer = new MarkdownLexer();
-    private MarkdownParser _parser = new MarkdownParser();
-    private HtmlRenderer _renderer = new HtmlRenderer();
+    private readonly MarkdownLexer _lexer = new MarkdownLexer();
+    private readonly MarkdownParser _parser = new MarkdownParser();
+    private readonly HtmlRenderer _renderer = new HtmlRenderer();
+    private readonly MarkdownStandard _standard;
+
+    public MarkdownProcessor(MarkdownStandard standard)
+    {
+        _standard = standard;
+    }
 
     public string ConvertMarkdownToHtml(string markdown)
     {
         var tokens = _lexer.Lex(markdown);
         var ast = _parser.Parse(tokens);
-        return _renderer.Render(ast);
+        return _renderer.Render(ast, _standard);
     }
 }
