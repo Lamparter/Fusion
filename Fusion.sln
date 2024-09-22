@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fusion.Tests", "Fusion.Test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fusion.Tests.Demo", "Fusion.Tests.Demo\Fusion.Tests.Demo.csproj", "{251B4D71-CA09-494D-8486-8773F02AA2AD}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{AA48F3FB-7600-4C48-A034-5FDA24EC6A70}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +32,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{FDB4A19F-E391-46F6-B081-93177BC2B4FD} = {AA48F3FB-7600-4C48-A034-5FDA24EC6A70}
+		{251B4D71-CA09-494D-8486-8773F02AA2AD} = {AA48F3FB-7600-4C48-A034-5FDA24EC6A70}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BA407799-F2E3-497D-987C-CABCB1B77FE3}
