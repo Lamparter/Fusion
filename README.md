@@ -1,3 +1,3 @@
 # 🎇 Fusion
 
-#### Markdown mastery at your fingertips.
+#### The spark .NET needs!
