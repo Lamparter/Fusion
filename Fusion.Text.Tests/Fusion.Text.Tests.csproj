@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Fusion\Fusion.csproj" />
+    <ProjectReference Include="..\Fusion.Text\Fusion.Text.csproj" />
   </ItemGroup>
 
   <ItemGroup>
